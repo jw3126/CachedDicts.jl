@@ -1,5 +1,4 @@
 module CachedDicts
-using ArgCheck
 export CachedDict
 
 ################################################################################
