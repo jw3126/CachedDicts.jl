@@ -80,24 +80,24 @@ for f in [:length, :get, :getindex, :setindex!, :iterate, :delete!, :empty!]
 end
 Base.get(f::Base.Callable, d::MyDict, key) = get(f,d.dict, key)
 
-struct ForgetfulDict{K,V} <: AbstractDict{K,V}
+struct MyCache{K,V} <: AbstractDict{K,V}
     # mimics a cache with limited memory
     dict::Dict{K,V}
 end
-ForgetfulDict{K,V}() where {K,V} = ForgetfulDict{K,V}(Dict{K,V}())
-for f in [:length, :get, :getindex, :iterate, :delete!, :empty!]
-    @eval (Base.$f)(d::ForgetfulDict, args...) = $(f)(d.dict, args...)
+MyCache{K,V}() where {K,V} = MyCache{K,V}(Dict{K,V}())
+for f in [:get, :getindex, :delete!, :empty!, :keytype, :valtype]
+    @eval (Base.$f)(d::MyCache, args...) = $(f)(d.dict, args...)
 end
-function Base.setindex!(d::ForgetfulDict, val, key)
+function Base.setindex!(d::MyCache, val, key)
     ret = d.dict[key] = val
-    for k in keys(d)
+    for k in keys(d.dict)
         if rand() < 0.5
-            delete!(d, k)
+            delete!(d.dict, k)
         end
     end
     ret
 end
-Base.get(f::Base.Callable, d::ForgetfulDict, key) = get(f,d.dict, key)
+Base.get(f::Base.Callable, d::MyCache, key) = get(f,d.dict, key)
 
 @testset "AbstractDict interface" begin
     test_dicts = []
@@ -121,7 +121,7 @@ Base.get(f::Base.Callable, d::ForgetfulDict, key) = get(f,d.dict, key)
             MyDict{K,V}(),
             Dict{K,V}(),
             CachedDict(MyDict{K,V}(), MyDict{K,V}()),
-            CachedDict(ForgetfulDict{K,V}(), MyDict{K,V}()),
+            CachedDict(MyCache{K,V}(), MyDict{K,V}()),
             CachedDict(Dict{K,V}(), Dict{K,V}()),
         ]
         for d_candidate in candidates

@@ -7,7 +7,10 @@ export CachedDict
 """
     CachedDict([cache,] storage) <: AbstractDict
 
-A cached variant of storage. See also [`FullyCachedDict`](@ref).
+A cached variant of storage. Here `cache` can 
+be of limited memory and is allowed to forget things. 
+For instance it is not assumed that `cache[key] = val` implies 
+`haskey(cache, key)`.
 """
 struct CachedDict{K,V,C,S <: AbstractDict} <: AbstractDict{K,V}
     cache::C
@@ -18,7 +21,7 @@ struct CachedDict{K,V,C,S <: AbstractDict} <: AbstractDict{K,V}
     end
 end
 
-@noinline function check_cache_storage_compatible(cache::AbstractDict, storage::AbstractDict)
+@noinline function check_cache_storage_compatible(cache, storage)
     if keytype(cache) != keytype(storage)
         msg = """
         Cache and storage must have the same keytype. Got:
@@ -34,9 +37,6 @@ end
         """
         throw(ArgumentError(msg))
     end
-end
-function check_cache_storage_compatible(cache::Any, storage::Any)
-    # hope for the best
 end
 
 function CachedDict(cache, storage)
